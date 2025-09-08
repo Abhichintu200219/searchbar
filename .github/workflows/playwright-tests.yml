@@ -1,17 +1,17 @@
-name: SearchBar E2E Tests (no-docker MySQL)
+name: Playwright E2E Tests (no-docker MySQL)
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
 
-    # Provide values to all steps via env (root password must be set as a repo secret)
     env:
+      # Make sure you add this secret in your repo settings: MYSQL_ROOT_PASSWORD
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       MYSQL_DATABASE: SearchBackend
       APP_URL: http://localhost:4173
@@ -31,11 +31,12 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install OS deps (MySQL server, client, netcat)
+      - name: Install OS dependencies (MySQL server, client, netcat)
         run: |
           sudo apt-get update
           # Noninteractive install so it doesn't prompt
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server default-mysql-client netcat
+          # Ensure mysql service can be started
           sudo systemctl enable mysql || true
 
       - name: Start MySQL service
@@ -45,10 +46,9 @@ jobs:
           sudo service mysql status || true
 
       - name: Secure and set root password + allow TCP auth
-        # Use the socket-based sudo mysql initially to set root password and plugin
         run: |
-          # Ensure we set the root user to use mysql_native_password and set the provided password.
-          # This avoids root using auth_socket and makes password-based TCP access possible.
+          # Set root to use mysql_native_password and set provided password.
+          # The heredoc is expanded by the shell so ${MYSQL_ROOT_PASSWORD} is substituted.
           sudo mysql <<SQL
           ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
           FLUSH PRIVILEGES;
@@ -57,12 +57,12 @@ jobs:
       - name: Create client config to avoid passing password on CLI
         run: |
           cat > /tmp/my.cnf <<EOF
-[client]
-user=root
-password=${MYSQL_ROOT_PASSWORD}
-host=127.0.0.1
-port=3306
-EOF
+            [client]
+            user=root
+            password=${MYSQL_ROOT_PASSWORD}
+            host=127.0.0.1
+            port=3306
+            EOF
           chmod 600 /tmp/my.cnf
 
       - name: Wait for MySQL (robust TCP + query check)
@@ -70,9 +70,7 @@ EOF
           echo "Waiting up to 3 minutes for MySQL to accept connections..."
           ready=false
           for i in $(seq 1 36); do
-            # Quick TCP port check
             if timeout 1 bash -c "cat < /dev/tcp/127.0.0.1/3306" >/dev/null 2>&1; then
-              # Try a simple query using /tmp/my.cnf
               if mysql --defaults-extra-file=/tmp/my.cnf --connect-timeout=5 -e "SELECT 1;" >/dev/null 2>&1; then
                 echo "MySQL is ready (attempt $i)."
                 ready=true
@@ -88,8 +86,8 @@ EOF
 
           if [ "$ready" != "true" ]; then
             echo "ERROR: MySQL did not become available in time."
+            echo "=== journalctl (mysql) last 200 lines ==="
             sudo journalctl -u mysql --no-pager -n 200 || true
-            # Print some status for debugging
             sudo ss -ltnp | grep 3306 || true
             exit 1
           fi
@@ -103,7 +101,7 @@ EOF
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL
           );
-          INSERT IGNORE INTO item (id, name) VALUES 
+          INSERT IGNORE INTO item (id, name) VALUES
             (1, 'test item 1'),
             (2, 'test item 2'),
             (3, 'testing'),
@@ -117,15 +115,15 @@ EOF
 
       - name: Create backend .env file
         run: |
-          cat > .env << EOF
-          MYSQL_USER=root
-          MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
-          MYSQL_HOST=127.0.0.1
-          MYSQL_PORT=3306
-          MYSQL_DB=${MYSQL_DATABASE}
-          FLASK_ENV=development
-          FLASK_APP=app.py
-          EOF
+          cat > .env <<EOF
+            MYSQL_USER=root
+            MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
+            MYSQL_HOST=127.0.0.1
+            MYSQL_PORT=3306
+            MYSQL_DB=${MYSQL_DATABASE}
+            FLASK_ENV=development
+            FLASK_APP=app.py
+            EOF
 
       - name: Install Python dependencies
         run: |
@@ -143,7 +141,6 @@ EOF
         run: |
           export FLASK_APP=app.py
           export FLASK_ENV=development
-          # Pass DB envs for your app
           export MYSQL_USER=root
           export MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
           export MYSQL_HOST=127.0.0.1
@@ -240,7 +237,6 @@ EOF
           echo "=== MySQL status and last logs ==="
           sudo ss -ltnp | grep 3306 || true
           sudo journalctl -u mysql --no-pager -n 200 || true
-          # query DB (uses /tmp/my.cnf to avoid showing password)
           if [ -f /tmp/my.cnf ]; then
             mysql --defaults-extra-file=/tmp/my.cnf --execute="SELECT COUNT(*) as item_count FROM ${MYSQL_DATABASE}.item;" || echo "DB query failed"
           else
