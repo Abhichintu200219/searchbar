@@ -1,20 +1,28 @@
-name: Playwright E2E Tests (no-docker MySQL)
+name: SearchBar E2E Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, develop]
+    branches: [ main, develop ]
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
 
-    env:
-      # Make sure you add this secret in your repo settings: MYSQL_ROOT_PASSWORD
-      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-      MYSQL_DATABASE: SearchBackend
-      APP_URL: http://localhost:4173
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Password@123
+          MYSQL_DATABASE: SearchBackend
+        # GitHub Actions services are available on localhost:3306 automatically.
+        # Explicit port mapping is usually unnecessary and can be omitted.
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout repository
@@ -31,99 +39,8 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install OS dependencies (MySQL server, client, netcat)
-        run: |
-          sudo apt-get update
-          # Noninteractive install so it doesn't prompt
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server default-mysql-client netcat
-          # Ensure mysql service can be started
-          sudo systemctl enable mysql || true
-
-      - name: Start MySQL service
-        run: |
-          sudo service mysql start
-          sleep 2
-          sudo service mysql status || true
-
-      - name: Secure and set root password + allow TCP auth
-        run: |
-          # Set root to use mysql_native_password and set provided password.
-          # The heredoc is expanded by the shell so ${MYSQL_ROOT_PASSWORD} is substituted.
-          sudo mysql <<SQL
-          ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
-          FLUSH PRIVILEGES;
-          SQL
-
-      - name: Create client config to avoid passing password on CLI
-        run: |
-          cat > /tmp/my.cnf <<EOF
-            [client]
-            user=root
-            password=${MYSQL_ROOT_PASSWORD}
-            host=127.0.0.1
-            port=3306
-            EOF
-          chmod 600 /tmp/my.cnf
-
-      - name: Wait for MySQL (robust TCP + query check)
-        run: |
-          echo "Waiting up to 3 minutes for MySQL to accept connections..."
-          ready=false
-          for i in $(seq 1 36); do
-            if timeout 1 bash -c "cat < /dev/tcp/127.0.0.1/3306" >/dev/null 2>&1; then
-              if mysql --defaults-extra-file=/tmp/my.cnf --connect-timeout=5 -e "SELECT 1;" >/dev/null 2>&1; then
-                echo "MySQL is ready (attempt $i)."
-                ready=true
-                break
-              else
-                echo "TCP open but mysql not responding to queries yet (attempt $i)."
-              fi
-            else
-              echo "127.0.0.1:3306 not open yet (attempt $i)."
-            fi
-            sleep 5
-          done
-
-          if [ "$ready" != "true" ]; then
-            echo "ERROR: MySQL did not become available in time."
-            echo "=== journalctl (mysql) last 200 lines ==="
-            sudo journalctl -u mysql --no-pager -n 200 || true
-            sudo ss -ltnp | grep 3306 || true
-            exit 1
-          fi
-
-      - name: Setup database and test data
-        run: |
-          mysql --defaults-extra-file=/tmp/my.cnf --execute="
-          CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
-          USE \`${MYSQL_DATABASE}\`;
-          CREATE TABLE IF NOT EXISTS item (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL
-          );
-          INSERT IGNORE INTO item (id, name) VALUES
-            (1, 'test item 1'),
-            (2, 'test item 2'),
-            (3, 'testing'),
-            (4, 'tests'),
-            (5, 'example test'),
-            (201, 'test'),
-            (214, 'testing'),
-            (215, 'tests'),
-            (216, 'test');
-          " || (echo "DB setup failed" && sudo journalctl -u mysql --no-pager -n 200 && exit 1)
-
-      - name: Create backend .env file
-        run: |
-          cat > .env <<EOF
-            MYSQL_USER=root
-            MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
-            MYSQL_HOST=127.0.0.1
-            MYSQL_PORT=3306
-            MYSQL_DB=${MYSQL_DATABASE}
-            FLASK_ENV=development
-            FLASK_APP=app.py
-            EOF
+      - name: Install OS dependencies (mysql client)
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
 
       - name: Install Python dependencies
         run: |
@@ -135,23 +52,67 @@ jobs:
 
       - name: Install Playwright browsers (with deps)
         run: |
+          # Ensure Playwright installs required browsers and system deps for CI
           npx playwright install --with-deps chromium
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root -pPassword@123 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+      - name: Setup database
+        run: |
+          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "
+          CREATE TABLE IF NOT EXISTS item (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL
+          );
+          INSERT IGNORE INTO item (id, name) VALUES 
+            (1, 'test item 1'),
+            (2, 'test item 2'),
+            (3, 'testing'),
+            (4, 'tests'),
+            (5, 'example test'),
+            (201, 'test'),
+            (214, 'testing'),
+            (215, 'tests'),
+            (216, 'test');
+          "
+
+      - name: Create backend .env file
+        run: |
+          cat > .env << EOF
+          MYSQL_USER=root
+          MYSQL_PASS=Password@123
+          MYSQL_HOST=localhost
+          MYSQL_PORT=3306
+          MYSQL_DB=SearchBackend
+          FLASK_ENV=development
+          FLASK_APP=app.py
+          EOF
 
       - name: Start Flask backend
         run: |
-          export FLASK_APP=app.py
-          export FLASK_ENV=development
-          export MYSQL_USER=root
-          export MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
-          export MYSQL_HOST=127.0.0.1
-          export MYSQL_PORT=3306
-          export MYSQL_DB=${MYSQL_DATABASE}
+          # Prefer using flask run so you can control host/port; fallback to `python app.py` if your app boots differently.
           if command -v flask >/dev/null 2>&1; then
             flask run --host=0.0.0.0 --port=5001 &
           else
-            python app.py &
+            python app.py &   # ensure your app binds 0.0.0.0:5001
           fi
           echo $! > flask.pid
+        env:
+          MYSQL_USER: root
+          MYSQL_PASS: Password@123
+          MYSQL_HOST: localhost
+          MYSQL_PORT: 3306
+          MYSQL_DB: SearchBackend
+          FLASK_ENV: development
 
       - name: Wait for Flask backend
         run: |
@@ -163,7 +124,7 @@ jobs:
             echo "Waiting for Flask backend... ($i/30)"
             sleep 2
           done
-          echo "Testing API endpoint (non-fatal):"
+          echo "Testing API endpoint:"
           curl -X GET 'http://localhost:5001/api/items?q=test' -H 'Content-Type: application/json' || true
 
       - name: Build React frontend
@@ -190,7 +151,7 @@ jobs:
       - name: Run Cucumber E2E tests
         run: |
           export HEADLESS=true
-          export APP_URL=${{ env.APP_URL }}
+          export APP_URL=http://localhost:4173
           npx cucumber-js --format json:test-results.json --format @cucumber/pretty-formatter
         env:
           NODE_ENV: test
@@ -218,27 +179,19 @@ jobs:
         run: |
           if [ -f flask.pid ]; then
             kill $(cat flask.pid) || true
-            rm -f flask.pid
           fi
           if [ -f react.pid ]; then
             kill $(cat react.pid) || true
-            rm -f react.pid
           fi
           pkill -f "python app.py" || true
           pkill -f "npm run preview" || true
 
-      - name: Show application logs (on failure)
+      - name: Show application logs
         if: failure()
         run: |
-          echo "=== Flask backend root ==="
+          echo "=== Flask Backend Logs ==="
           curl -s http://localhost:5001/ || echo "Backend not responding"
-          echo "=== React frontend root ==="
+          echo "=== React Frontend Logs ==="
           curl -s http://localhost:4173/ || echo "Frontend not responding"
-          echo "=== MySQL status and last logs ==="
-          sudo ss -ltnp | grep 3306 || true
-          sudo journalctl -u mysql --no-pager -n 200 || true
-          if [ -f /tmp/my.cnf ]; then
-            mysql --defaults-extra-file=/tmp/my.cnf --execute="SELECT COUNT(*) as item_count FROM ${MYSQL_DATABASE}.item;" || echo "DB query failed"
-          else
-            echo "/tmp/my.cnf missing; cannot query DB safely"
-          fi
+          echo "=== Database Status ==="
+          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "SELECT COUNT(*) as item_count FROM item;" || echo "Database not accessible"
