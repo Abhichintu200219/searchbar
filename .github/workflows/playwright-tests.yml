@@ -57,18 +57,25 @@ jobs:
 
       - name: Wait for MySQL
         run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -u root -pPassword@123 --silent; then
-              echo "MySQL is ready!"
+          echo "Waiting for MySQL (up to 5 minutes)..."
+          for i in {1..60}; do
+            # try pinging localhost then service hostname 'mysql'
+            if mysqladmin ping -h 127.0.0.1 -u root -pPassword@123 --silent 2>/dev/null; then
+              echo "MySQL is ready on 127.0.0.1 (attempt $i)"
               break
+            elif mysqladmin ping -h mysql -u root -pPassword@123 --silent 2>/dev/null; then
+              echo "MySQL is ready on service host 'mysql' (attempt $i)"
+              break
+            else
+              echo "Waiting for MySQL... (attempt $i/60)"
+              sleep 5
             fi
-            echo "Waiting for MySQL... ($i/30)"
-            sleep 2
           done
 
       - name: Setup database
         run: |
-          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "
+          # Use TCP explicitly and a heredoc to avoid quoting issues
+          mysql --protocol=TCP -h 127.0.0.1 -u root -pPassword@123 SearchBackend <<'SQL'
           CREATE TABLE IF NOT EXISTS item (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL
@@ -83,7 +90,7 @@ jobs:
             (214, 'testing'),
             (215, 'tests'),
             (216, 'test');
-          "
+          SQL
 
       - name: Create backend .env file
         run: |
