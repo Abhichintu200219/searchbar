@@ -58,29 +58,37 @@ jobs:
       - name: Wait for MySQL
         run: |
           echo "Waiting for MySQL (up to 5 minutes)..."
+          ready=false
           for i in {1..60}; do
-            # try pinging localhost then service hostname 'mysql'
-            if mysqladmin ping -h 127.0.0.1 -u root -pPassword@123 --silent 2>/dev/null; then
-              echo "MySQL is ready on 127.0.0.1 (attempt $i)"
-              break
-            elif mysqladmin ping -h mysql -u root -pPassword@123 --silent 2>/dev/null; then
+            if mysqladmin --protocol=TCP ping -h mysql -u root -pPassword@123 --silent 2>/dev/null; then
               echo "MySQL is ready on service host 'mysql' (attempt $i)"
+              ready=true
+              break
+            elif mysqladmin --protocol=TCP ping -h 127.0.0.1 -u root -pPassword@123 --silent 2>/dev/null; then
+              echo "MySQL is ready on 127.0.0.1 (attempt $i)"
+              ready=true
               break
             else
               echo "Waiting for MySQL... (attempt $i/60)"
-              sleep 5
             fi
+            sleep 5
           done
+
+          if [ "$ready" != "true" ]; then
+            echo "ERROR: MySQL did not become available in time."
+            # show any available service/container info for debugging
+            docker ps --filter "ancestor=mysql:8.0" --format "{{.ID}} {{.Image}} {{.Status}}" || true
+            exit 1
+          fi
 
       - name: Setup database
         run: |
-          # Use TCP explicitly and a heredoc to avoid quoting issues
-          mysql --protocol=TCP -h 127.0.0.1 -u root -pPassword@123 SearchBackend <<'SQL'
-          CREATE TABLE IF NOT EXISTS item (
+          SQL_BLOCK=$(cat <<'SQL'
+            CREATE TABLE IF NOT EXISTS item (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL
-          );
-          INSERT IGNORE INTO item (id, name) VALUES 
+            );
+            INSERT IGNORE INTO item (id, name) VALUES 
             (1, 'test item 1'),
             (2, 'test item 2'),
             (3, 'testing'),
@@ -90,7 +98,15 @@ jobs:
             (214, 'testing'),
             (215, 'tests'),
             (216, 'test');
-          SQL
+            SQL
+            )
+          # Try service hostname first, then fallback to localhost
+          if mysql --protocol=TCP -h mysql -u root -pPassword@123 SearchBackend <<< "$SQL_BLOCK"; then
+            echo "DB setup succeeded via host 'mysql'"
+          else
+            echo "Host 'mysql' failed — retrying with 127.0.0.1"
+            mysql --protocol=TCP -h 127.0.0.1 -u root -pPassword@123 SearchBackend <<< "$SQL_BLOCK"
+          fi
 
       - name: Create backend .env file
         run: |
