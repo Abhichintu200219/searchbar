@@ -32,6 +32,7 @@ def home():
 
 @app.route('/api/items')
 def get_items():
+    
     q = request.args.get('q', '').strip()
     items = []
     if q:
