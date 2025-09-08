@@ -1,0 +1,1115 @@
+[
+  {
+    "description": "  As a user\n  I want to search for items using the SearchBar\n  So that I can find relevant results quickly",
+    "elements": [
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-see-the-search-input-field",
+        "keyword": "Scenario",
+        "line": 10,
+        "name": "User can see the search input field",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2499716257
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1841572779
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 19775219
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "I should see the search input field with placeholder \"Search...\"",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:31"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 18193161
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "I should see the search icon",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:37"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9616082
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "I should see the dropdown toggle button",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:41"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5511081
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 397385946
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-types-in-search-field",
+        "keyword": "Scenario",
+        "line": 15,
+        "name": "User types in search field",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1492674623
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1868416027
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 18016094
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 16,
+            "name": "I type \"apple\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:46"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1595346310
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the search field should contain \"apple\"",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:62"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9256434
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "the clear button should be visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4705051
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "the dropdown should be open",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:87"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 15844748
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 354982107
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;search-triggers-api-call-with-debounce",
+        "keyword": "Scenario",
+        "line": 21,
+        "name": "Search triggers API call with debounce",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1406727073
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1748697578
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 30295519
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 22,
+            "name": "I type \"test\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:46"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1594993255
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "I wait for 400 milliseconds",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:110"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 407555373
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 24,
+            "name": "an API call should be made with query \"test\"",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:114"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2188066098
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 25,
+            "name": "search results should be displayed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:223"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 10028729
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 397885374
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-navigate-search-results-with-keyboard",
+        "keyword": "Scenario",
+        "line": 27,
+        "name": "User can navigate search results with keyboard",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1181381386
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1925551801
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 14121586
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 28,
+            "name": "I have typed \"item\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1674235180
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 29,
+            "name": "search results are displayed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:171"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 615275430
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 30,
+            "name": "I press the \"ArrowDown\" key",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:231"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 528740142
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 31,
+            "name": "the first result should be highlighted",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:239"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4658077
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 32,
+            "name": "I press the \"ArrowDown\" key again",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:235"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 522052915
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 33,
+            "name": "the second result should be highlighted",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:244"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7923733
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 397617475
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-select-result-with-enter-key",
+        "keyword": "Scenario",
+        "line": 35,
+        "name": "User can select result with Enter key",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1825145924
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1804977642
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 15724059
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 36,
+            "name": "I have typed \"test\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1676284721
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 37,
+            "name": "search results are displayed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:171"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 614900944
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 38,
+            "name": "I press the \"ArrowDown\" key",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:231"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 517845216
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 39,
+            "name": "I press the \"Enter\" key",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:231"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 522842505
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 40,
+            "name": "the selected result should be populated in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:256"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 205195927
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 41,
+            "name": "the dropdown should be closed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:91"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4313194
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 314867237
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-select-result-by-clicking",
+        "keyword": "Scenario",
+        "line": 43,
+        "name": "User can select result by clicking",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1407197352
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1705684063
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 19003490
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 44,
+            "name": "I have typed \"item\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1713180132
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 45,
+            "name": "search results are displayed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:171"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 618564007
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 46,
+            "name": "I click on the first search result",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:250"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 549426458
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 47,
+            "name": "the selected result should be populated in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:256"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 204072953
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 48,
+            "name": "the dropdown should be closed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:91"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3693662
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 335861704
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-clear-the-search-field",
+        "keyword": "Scenario",
+        "line": 50,
+        "name": "User can clear the search field",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1501488951
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1755376662
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 23794353
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 51,
+            "name": "I have typed \"apple\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1680825444
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 52,
+            "name": "I click the clear button",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:76"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 556202126
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 53,
+            "name": "the search field should be empty",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:66"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4926542
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "the dropdown should be closed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:91"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9775905
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 55,
+            "name": "the search field should be focused",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:82"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 12679419
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 318040506
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;user-can-close-dropdown-with-escape-key",
+        "keyword": "Scenario",
+        "line": 57,
+        "name": "User can close dropdown with Escape key",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1876065170
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1784307711
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 21006407
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 58,
+            "name": "I have typed \"test\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1693088900
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 59,
+            "name": "the dropdown is open",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:95"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 509096284
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 60,
+            "name": "I press the \"Escape\" key",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:231"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 517774007
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 61,
+            "name": "the dropdown should be closed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:91"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3235016
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 408082690
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;clicking-outside-closes-the-dropdown",
+        "keyword": "Scenario",
+        "line": 63,
+        "name": "Clicking outside closes the dropdown",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1428736184
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1718633751
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 42083707
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 64,
+            "name": "I have typed \"test\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1695161043
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 65,
+            "name": "the dropdown is open",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:95"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 510769915
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 66,
+            "name": "I click outside the search component",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:266"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 542372935
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 67,
+            "name": "the dropdown should be closed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:91"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2817220
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 314508932
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "searchbar-functionality;search-highlights-matching-text-in-results",
+        "keyword": "Scenario",
+        "line": 69,
+        "name": "Search highlights matching text in results",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1104693827
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I am on the search application page",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:20"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1873825064
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the SearchBar is visible",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:26"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 15859328
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 70,
+            "name": "I have typed \"app\" in the search field",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1693276418
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 71,
+            "name": "search results containing \"apple\" are displayed",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:203"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1628580327
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the text \"app\" should be highlighted in the results",
+            "match": {
+              "location": "e2e/step_definitions/search_steps.cjs:275"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 16070753
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 274262620
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "searchbar-functionality",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "SearchBar Functionality",
+    "tags": [],
+    "uri": "e2e/features/search.feature"
+  }
+]

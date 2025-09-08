@@ -1,0 +1,7 @@
+# requirements.txt
+flask
+flask_sqlalchemy
+pymysql
+flask_cors
+faker
+python-dotenv

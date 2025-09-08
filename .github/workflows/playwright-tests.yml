@@ -1,0 +1,212 @@
+name: SearchBar E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Password@123
+          MYSQL_DATABASE: SearchBackend
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js for frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # 3. Setup Python for backend
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 4. Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask flask-sqlalchemy flask-cors python-dotenv pymysql
+
+      # 5. Install Node.js dependencies
+      - name: Install Node.js dependencies
+        run: npm install
+
+      # 6. Install Playwright browsers
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      # 7. Wait for MySQL to be ready
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root -pPassword@123 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+      # 8. Setup database and test data
+      - name: Setup database
+        run: |
+          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "
+          CREATE TABLE IF NOT EXISTS item (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL
+          );
+          
+          INSERT IGNORE INTO item (id, name) VALUES 
+          (1, 'test item 1'),
+          (2, 'test item 2'),
+          (3, 'testing'),
+          (4, 'tests'),
+          (5, 'example test'),
+          (201, 'test'),
+          (214, 'testing'),
+          (215, 'tests'),
+          (216, 'test');
+          "
+
+      # 9. Create backend environment file
+      - name: Create backend .env file
+        run: |
+          cat > .env << EOF
+          MYSQL_USER=root
+          MYSQL_PASS=Password@123
+          MYSQL_HOST=localhost
+          MYSQL_PORT=3306
+          MYSQL_DB=SearchBackend
+          FLASK_ENV=development
+          FLASK_APP=app.py
+          EOF
+
+      # 10. Start Flask backend
+      - name: Start Flask backend
+        run: |
+          python app.py &
+          echo $! > flask.pid
+        env:
+          MYSQL_USER: root
+          MYSQL_PASS: Password@123
+          MYSQL_HOST: localhost
+          MYSQL_PORT: 3306
+          MYSQL_DB: SearchBackend
+          FLASK_ENV: development
+
+      # 11. Wait for Flask backend to be ready
+      - name: Wait for Flask backend
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5001/ > /dev/null; then
+              echo "Flask backend is ready!"
+              break
+            fi
+            echo "Waiting for Flask backend... ($i/30)"
+            sleep 2
+          done
+          
+          # Test the API endpoint
+          echo "Testing API endpoint:"
+          curl -X GET 'http://localhost:5001/api/items?q=test' -H 'Content-Type: application/json' || true
+
+      # 12. Build React frontend
+      - name: Build React frontend
+        run: npm run build
+
+      # 13. Start React frontend
+      - name: Start React frontend
+        run: |
+          npm run preview &
+          echo $! > react.pid
+        env:
+          CI: true
+
+      # 14. Wait for React frontend to be ready
+      - name: Wait for React frontend
+        run: |
+          for i in {1..60}; do
+            if curl -s http://localhost:4173/ > /dev/null; then
+              echo "React frontend is ready!"
+              break
+            fi
+            echo "Waiting for React frontend... ($i/60)"
+            sleep 2
+          done
+
+      # 15. Run E2E tests
+      - name: Run Cucumber E2E tests
+        run: |
+          export HEADLESS=true
+          export APP_URL=http://localhost:4173
+          npx cucumber-js --format json:test-results.json --format @cucumber/pretty-formatter
+        env:
+          NODE_ENV: test
+
+      # 16. Upload test results on failure
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            test-results.json
+            test-results/
+            screenshots/
+            videos/
+
+      # 17. Upload Playwright traces on failure
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-traces
+          path: test-results/
+
+      # 18. Cleanup processes
+      - name: Cleanup processes
+        if: always()
+        run: |
+          if [ -f flask.pid ]; then
+            kill $(cat flask.pid) || true
+          fi
+          if [ -f react.pid ]; then
+            kill $(cat react.pid) || true
+          fi
+          # Kill any remaining processes
+          pkill -f "python app.py" || true
+          pkill -f "npm run preview" || true
+
+      # 19. Show logs on failure
+      - name: Show application logs
+        if: failure()
+        run: |
+          echo "=== Flask Backend Logs ==="
+          curl -s http://localhost:5001/ || echo "Backend not responding"
+          
+          echo "=== React Frontend Logs ==="
+          curl -s http://localhost:4173/ || echo "Frontend not responding"
+          
+          echo "=== Database Status ==="
+          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "SELECT COUNT(*) as item_count FROM item;" || echo "Database not accessible"

@@ -1,0 +1,52 @@
+{
+  "name": "searchbar-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test:cucumber": "cucumber-js",
+    "test:cucumber:html": "cucumber-js --format html:reports/cucumber_report.html",
+    "test:setup": "npm run preview & sleep 3",
+     "test:e2e": "cucumber-js",
+    "test:e2e:headed": "cucumber-js --format progress",
+    "test:e2e:debug": "HEADLESS=false SLOW_MO=100 cucumber-js",
+    "test:e2e:verbose": "cucumber-js --format @cucumber/pretty-formatter",
+    "test:backend": "curl -X GET 'http://localhost:5001/api/items?q=test' -H 'Content-Type: application/json'",
+    "start:all": "concurrently \"npm run start:backend\" \"npm start\"",
+    "start:backend": "cd backend && python app.py"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.9.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "lucide-react": "^0.542.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-redux": "^9.2.0",
+    "tailwindcss": "^4.1.13"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.2.0",
+    "@eslint/js": "^9.33.0",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "cucumber-html-reporter": "^7.2.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "playwright": "^1.55.0",
+    "playwright-bdd": "^8.4.1",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^7.1.2"
+  }
+}
