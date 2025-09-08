@@ -1,4 +1,4 @@
-name: SearchBar E2E Tests
+name: SearchBar E2E Tests (no-docker MySQL)
 
 on:
   push:
@@ -10,24 +10,11 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
 
-    # Add your DB password as a repository secret named MYSQL_ROOT_PASSWORD
+    # Provide values to all steps via env (root password must be set as a repo secret)
     env:
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       MYSQL_DATABASE: SearchBackend
       APP_URL: http://localhost:4173
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: SearchBackend
-        # Health command runs inside the container; it's okay to use mysqladmin there
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
 
     steps:
       - name: Checkout repository
@@ -44,75 +31,74 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install OS dependencies (mysql client + netcat)
+      - name: Install OS deps (MySQL server, client, netcat)
         run: |
           sudo apt-get update
-          sudo apt-get install -y default-mysql-client netcat
+          # Noninteractive install so it doesn't prompt
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server default-mysql-client netcat
+          sudo systemctl enable mysql || true
 
-      - name: Install Python dependencies
+      - name: Start MySQL service
         run: |
-          python -m pip install --upgrade pip
-          pip install flask flask-sqlalchemy flask-cors python-dotenv pymysql
+          sudo service mysql start
+          sleep 2
+          sudo service mysql status || true
 
-      - name: Install Node.js dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers (with deps)
+      - name: Secure and set root password + allow TCP auth
+        # Use the socket-based sudo mysql initially to set root password and plugin
         run: |
-          # installs browsers + necessary system deps in CI
-          npx playwright install --with-deps chromium
+          # Ensure we set the root user to use mysql_native_password and set the provided password.
+          # This avoids root using auth_socket and makes password-based TCP access possible.
+          sudo mysql <<SQL
+          ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
+          FLUSH PRIVILEGES;
+          SQL
 
-      - name: Wait for MySQL (robust check)
+      - name: Create client config to avoid passing password on CLI
         run: |
-          # Create a temporary client config file to avoid passing password on CLI later
           cat > /tmp/my.cnf <<EOF
-            [client]
-            user=root
-            password=${MYSQL_ROOT_PASSWORD}
-            host=127.0.0.1
-            port=3306
-            EOF
+[client]
+user=root
+password=${MYSQL_ROOT_PASSWORD}
+host=127.0.0.1
+port=3306
+EOF
+          chmod 600 /tmp/my.cnf
 
-          echo "Waiting up to 3 minutes for MySQL to accept connections on 127.0.0.1:3306..."
+      - name: Wait for MySQL (robust TCP + query check)
+        run: |
+          echo "Waiting up to 3 minutes for MySQL to accept connections..."
           ready=false
           for i in $(seq 1 36); do
-            # quick TCP port open check using bash /dev/tcp
+            # Quick TCP port check
             if timeout 1 bash -c "cat < /dev/tcp/127.0.0.1/3306" >/dev/null 2>&1; then
-              echo "TCP 127.0.0.1:3306 open (attempt $i)"
-              # try a small query using the temporary config file
+              # Try a simple query using /tmp/my.cnf
               if mysql --defaults-extra-file=/tmp/my.cnf --connect-timeout=5 -e "SELECT 1;" >/dev/null 2>&1; then
-                echo "MySQL answered queries — ready!"
+                echo "MySQL is ready (attempt $i)."
                 ready=true
                 break
               else
-                echo "MySQL TCP open but not responding to queries yet. (attempt $i)"
+                echo "TCP open but mysql not responding to queries yet (attempt $i)."
               fi
             else
-              echo "127.0.0.1:3306 not open yet. (attempt $i)"
+              echo "127.0.0.1:3306 not open yet (attempt $i)."
             fi
             sleep 5
           done
 
           if [ "$ready" != "true" ]; then
-            echo "ERROR: MySQL not available after timeout."
-            echo "Attempting to print MySQL container logs (helpful for debugging):"
-            docker ps --filter "ancestor=mysql:8.0" --format "{{.ID}} {{.Image}} {{.Status}}"
-            # try to locate the mysql container and show last 200 lines
-            CONTAINER_ID=$(docker ps --filter "ancestor=mysql:8.0" -q | head -n1 || true)
-            if [ -n "$CONTAINER_ID" ]; then
-              docker logs "$CONTAINER_ID" | tail -n 200 || true
-            else
-              echo "MySQL container not found via docker ps"
-            fi
+            echo "ERROR: MySQL did not become available in time."
+            sudo journalctl -u mysql --no-pager -n 200 || true
+            # Print some status for debugging
+            sudo ss -ltnp | grep 3306 || true
             exit 1
           fi
 
       - name: Setup database and test data
         run: |
-          # use /tmp/my.cnf to avoid password on CLI
           mysql --defaults-extra-file=/tmp/my.cnf --execute="
-          CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
-          USE ${MYSQL_DATABASE};
+          CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
+          USE \`${MYSQL_DATABASE}\`;
           CREATE TABLE IF NOT EXISTS item (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL
@@ -127,7 +113,7 @@ jobs:
             (214, 'testing'),
             (215, 'tests'),
             (216, 'test');
-          " || (echo "DB setup failed — attempting to show container logs" && docker ps --filter "ancestor=mysql:8.0" -q | xargs -r docker logs | tail -n 200 && exit 1)
+          " || (echo "DB setup failed" && sudo journalctl -u mysql --no-pager -n 200 && exit 1)
 
       - name: Create backend .env file
         run: |
@@ -141,11 +127,23 @@ jobs:
           FLASK_APP=app.py
           EOF
 
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask flask-sqlalchemy flask-cors python-dotenv pymysql
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers (with deps)
+        run: |
+          npx playwright install --with-deps chromium
+
       - name: Start Flask backend
         run: |
-          # prefer `flask run` if flask CLI is present; ensure it binds 0.0.0.0:5001
           export FLASK_APP=app.py
           export FLASK_ENV=development
+          # Pass DB envs for your app
           export MYSQL_USER=root
           export MYSQL_PASS=${MYSQL_ROOT_PASSWORD}
           export MYSQL_HOST=127.0.0.1
@@ -154,12 +152,9 @@ jobs:
           if command -v flask >/dev/null 2>&1; then
             flask run --host=0.0.0.0 --port=5001 &
           else
-            # if your app requires different start, ensure it binds 0.0.0.0:5001
             python app.py &
           fi
           echo $! > flask.pid
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
 
       - name: Wait for Flask backend
         run: |
@@ -235,20 +230,19 @@ jobs:
           pkill -f "python app.py" || true
           pkill -f "npm run preview" || true
 
-      - name: Show application logs (for failures)
+      - name: Show application logs (on failure)
         if: failure()
         run: |
-          echo "=== Flask Backend root URL (check) ==="
+          echo "=== Flask backend root ==="
           curl -s http://localhost:5001/ || echo "Backend not responding"
-          echo "=== React Frontend root URL (check) ==="
+          echo "=== React frontend root ==="
           curl -s http://localhost:4173/ || echo "Frontend not responding"
-          echo "=== Database status ==="
-          # use the temp my.cnf approach if it exists
+          echo "=== MySQL status and last logs ==="
+          sudo ss -ltnp | grep 3306 || true
+          sudo journalctl -u mysql --no-pager -n 200 || true
+          # query DB (uses /tmp/my.cnf to avoid showing password)
           if [ -f /tmp/my.cnf ]; then
             mysql --defaults-extra-file=/tmp/my.cnf --execute="SELECT COUNT(*) as item_count FROM ${MYSQL_DATABASE}.item;" || echo "DB query failed"
           else
-            mysql -h 127.0.0.1 -u root -p${MYSQL_ROOT_PASSWORD} --execute="SELECT COUNT(*) as item_count FROM ${MYSQL_DATABASE}.item;" || echo "DB query failed"
+            echo "/tmp/my.cnf missing; cannot query DB safely"
           fi
-          echo "=== MySQL container logs (last 200 lines) ==="
-          docker ps --filter "ancestor=mysql:8.0" --format "{{.ID}} {{.Image}} {{.Status}}"
-          docker ps --filter "ancestor=mysql:8.0" -q | xargs -r docker logs | tail -n 200 || true
