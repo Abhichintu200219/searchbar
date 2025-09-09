@@ -89,10 +89,7 @@ Then('the dropdown should be open', async function() {
 });
 
 Then('the dropdown should be closed', async function() {
-  await this.page.waitForSelector('[data-testid="dropdown"]', { 
-    state: 'hidden',
-    timeout: 10000 
-  });
+  await expect(this.page.locator(SELECTORS.dropdown)).not.toBeVisible();
 });
 
 Given('the dropdown is open', async function() {

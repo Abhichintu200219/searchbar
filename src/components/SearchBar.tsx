@@ -130,9 +130,13 @@ export default function SearchBar({
     }
 
     if (e.key === "Escape") {
+      e.preventDefault();
       setOpen(false);
       setSelectedIndex(-1);
+      return;
     }
+
+    if (!open || results.length === 0) return;
   };
 
   const handleClear = () => {
