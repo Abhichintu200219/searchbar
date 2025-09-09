@@ -10,8 +10,8 @@ class CustomWorld {
 
   async openBrowser() {
     this.browser = await chromium.launch({
-      headless: false,
-      slowMo: 500 // Slow down actions for better visibility
+      headless: process.env.HEADLESS === 'true' || process.env.CI === 'true',
+      slowMo: process.env.CI ? 0 : 500// Slow down actions for better visibility
     });
     this.context = await this.browser.newContext();
     this.page = await this.context.newPage();
