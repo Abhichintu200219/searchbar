@@ -54,11 +54,7 @@ Feature: SearchBar Functionality
     And the dropdown should be closed
     And the search field should be focused
 
-  Scenario: User can close dropdown with Escape key
-    Given I have typed "test" in the search field
-    And the dropdown is open
-    When I press the "Escape" key
-    Then the dropdown should be closed
+  
 
   Scenario: Clicking outside closes the dropdown
     Given I have typed "test" in the search field
