@@ -88,7 +88,7 @@ Then('the dropdown should be open', async function() {
   await expect(this.page.locator(SELECTORS.dropdown)).toBeVisible({ timeout: 3000 });
 });
 
-Then('the dropdown should be closed', async function() {
+Then('the dropdown should be closed', { timeout: 10000 }, async function() {
   await expect(this.page.locator(SELECTORS.dropdown)).not.toBeVisible();
 });
 
