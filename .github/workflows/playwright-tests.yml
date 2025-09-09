@@ -1,126 +1,48 @@
-name: SearchBar E2E Tests
+name: Playwright E2E Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ "main" ]
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
-
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8
+        ports:
+          - 3306:3306
         env:
           MYSQL_ROOT_PASSWORD: Password@123
           MYSQL_DATABASE: SearchBackend
-        # GitHub Actions services are available on localhost:3306 automatically.
-        # Explicit port mapping is usually unnecessary and can be omitted.
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pPassword@123"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # ------------------ Backend Setup ------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20.19'
-          cache: 'npm'
+          python-version: '3.11'
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install OS dependencies (mysql client)
-        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
-
-      - name: Install Python dependencies
+      - name: Install backend dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flask flask-sqlalchemy flask-cors python-dotenv pymysql
-
-      - name: Install Node.js dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers (with deps)
-        run: |
-          # Ensure Playwright installs required browsers and system deps for CI
-          npx playwright install --with-deps chromium
-
-      - name: Wait for MySQL
-        run: |
-          echo "Waiting for MySQL (up to 5 minutes)..."
-          ready=false
-          for i in {1..60}; do
-            if mysqladmin --protocol=TCP ping -h mysql -u root -pPassword@123 --silent 2>/dev/null; then
-              echo "MySQL is ready on service host 'mysql' (attempt $i)"
-              ready=true
-              break
-            elif mysqladmin --protocol=TCP ping -h 127.0.0.1 -u root -pPassword@123 --silent 2>/dev/null; then
-              echo "MySQL is ready on 127.0.0.1 (attempt $i)"
-              ready=true
-              break
-            else
-              echo "Waiting for MySQL... (attempt $i/60)"
-            fi
-            sleep 5
-          done
-
-          if [ "$ready" != "true" ]; then
-            echo "ERROR: MySQL did not become available in time."
-            # show any available service/container info for debugging
-            docker ps --filter "ancestor=mysql:8.0" --format "{{.ID}} {{.Image}} {{.Status}}" || true
-            exit 1
-          fi
-
-      - name: Setup database
-        run: |
-          mysql -h 127.0.0.1 -P 3306 -u root -pPassword@123 SearchBackend <<EOF
-          CREATE TABLE IF NOT EXISTS item (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL
-          );
-          INSERT IGNORE INTO item (id, name) VALUES 
-          (1, 'test item 1'),
-          (2, 'test item 2'),
-          (3, 'testing'),
-          (4, 'tests'),
-          (5, 'example test'),
-          (201, 'test'),
-          (214, 'testing'),
-          (215, 'tests'),
-          (216, 'test');
-          EOF
-
-      - name: Create backend .env file
-        run: |
-          cat > .env << EOF
-          MYSQL_USER=root
-          MYSQL_PASS=Password@123
-          MYSQL_HOST=localhost
-          MYSQL_PORT=3306
-          MYSQL_DB=SearchBackend
-          FLASK_ENV=development
-          FLASK_APP=app.py
-          EOF
+          cd backend || true
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Start Flask backend
         run: |
-          # Prefer using flask run so you can control host/port; fallback to `python app.py` if your app boots differently.
-          if command -v flask >/dev/null 2>&1; then
-            flask run --host=0.0.0.0 --port=5001 &
-          else
-            python app.py &   # ensure your app binds 0.0.0.0:5001
-          fi
-          echo $! > flask.pid
+          cd backend || true
+          python app.py &
+          echo $! > backend.pid
         env:
           MYSQL_USER: root
           MYSQL_PASS: Password@123
@@ -128,85 +50,63 @@ jobs:
           MYSQL_PORT: 3306
           MYSQL_DB: SearchBackend
           FLASK_ENV: development
+          FLASK_APP: app.py
 
-      - name: Wait for Flask backend
+      - name: Wait for backend
         run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:5001/ > /dev/null; then
-              echo "Flask backend is ready!"
-              break
+          for i in {1..10}; do
+            if curl -s http://127.0.0.1:5001/health > /dev/null; then
+              echo "Backend is up!"
+              exit 0
             fi
-            echo "Waiting for Flask backend... ($i/30)"
-            sleep 2
+            echo "Waiting for backend..."
+            sleep 5
           done
-          echo "Testing API endpoint:"
-          curl -X GET 'http://localhost:5001/api/items?q=test' -H 'Content-Type: application/json' || true
+          echo "Backend did not start in time."
+          exit 1
 
-      - name: Build React frontend
+      # ------------------ Frontend Setup ------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
         run: npm run build
 
-      - name: Start React frontend (Vite preview)
+      - name: Start frontend preview
         run: |
           npm run preview &
-          echo $! > react.pid
+          echo $! > frontend.pid
         env:
-          CI: true
+          VITE_API_URL: "http://127.0.0.1:5001"
 
-      - name: Wait for React frontend
+      - name: Wait for frontend
         run: |
-          for i in {1..60}; do
-            if curl -s http://localhost:4173/ > /dev/null; then
-              echo "React frontend is ready!"
-              break
+          for i in {1..10}; do
+            if curl -s http://127.0.0.1:4173 > /dev/null; then
+              echo "Frontend is up!"
+              exit 0
             fi
-            echo "Waiting for React frontend... ($i/60)"
-            sleep 2
+            echo "Waiting for frontend..."
+            sleep 5
           done
+          echo "Frontend did not start in time."
+          exit 1
 
-      - name: Run Cucumber E2E tests
-        run: |
-          export HEADLESS=true
-          export APP_URL=http://localhost:4173
-          npx cucumber-js --format json:test-results.json --format @cucumber/pretty-formatter
+      # ------------------ Run E2E Tests ------------------
+      - name: Run Cucumber + Playwright tests
+        run: npm run test:e2e
         env:
           NODE_ENV: test
+          HEADLESS: true
 
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            test-results.json
-            test-results/
-            screenshots/
-            videos/
-
-      - name: Upload Playwright traces
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-traces
-          path: test-results/
-
-      - name: Cleanup processes
+      # ------------------ Cleanup ------------------
+      - name: Stop services
         if: always()
         run: |
-          if [ -f flask.pid ]; then
-            kill $(cat flask.pid) || true
-          fi
-          if [ -f react.pid ]; then
-            kill $(cat react.pid) || true
-          fi
-          pkill -f "python app.py" || true
-          pkill -f "npm run preview" || true
-
-      - name: Show application logs
-        if: failure()
-        run: |
-          echo "=== Flask Backend Logs ==="
-          curl -s http://localhost:5001/ || echo "Backend not responding"
-          echo "=== React Frontend Logs ==="
-          curl -s http://localhost:4173/ || echo "Frontend not responding"
-          echo "=== Database Status ==="
-          mysql -h 127.0.0.1 -u root -pPassword@123 SearchBackend -e "SELECT COUNT(*) as item_count FROM item;" || echo "Database not accessible"
+          kill $(cat backend.pid) || true
+          kill $(cat frontend.pid) || true
