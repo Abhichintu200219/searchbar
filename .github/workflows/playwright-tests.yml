@@ -83,30 +83,22 @@ jobs:
 
       - name: Setup database
         run: |
-          SQL_BLOCK=$(cat <<'SQL'
-            CREATE TABLE IF NOT EXISTS item (
+          mysql -h 127.0.0.1 -P 3306 -u root -pPassword@123 SearchBackend <<EOF
+          CREATE TABLE IF NOT EXISTS item (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL
-            );
-            INSERT IGNORE INTO item (id, name) VALUES 
-            (1, 'test item 1'),
-            (2, 'test item 2'),
-            (3, 'testing'),
-            (4, 'tests'),
-            (5, 'example test'),
-            (201, 'test'),
-            (214, 'testing'),
-            (215, 'tests'),
-            (216, 'test');
-            SQL
-            )
-          # Try service hostname first, then fallback to localhost
-          if mysql --protocol=TCP -h mysql -u root -pPassword@123 SearchBackend <<< "$SQL_BLOCK"; then
-            echo "DB setup succeeded via host 'mysql'"
-          else
-            echo "Host 'mysql' failed — retrying with 127.0.0.1"
-            mysql --protocol=TCP -h 127.0.0.1 -u root -pPassword@123 SearchBackend <<< "$SQL_BLOCK"
-          fi
+          );
+          INSERT IGNORE INTO item (id, name) VALUES 
+          (1, 'test item 1'),
+          (2, 'test item 2'),
+          (3, 'testing'),
+          (4, 'tests'),
+          (5, 'example test'),
+          (201, 'test'),
+          (214, 'testing'),
+          (215, 'tests'),
+          (216, 'test');
+          EOF
 
       - name: Create backend .env file
         run: |
