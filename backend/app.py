@@ -9,7 +9,8 @@ logging.info(f"Attempting DB connection to {Config.SQLALCHEMY_DATABASE_URI.split
 
 app = Flask(__name__)
 app.config.from_object(Config)
-CORS(app)
+CORS(app, origins=["http://192.168.14.85:3000"])
+
 
 db = SQLAlchemy(app)
 
@@ -43,4 +44,4 @@ if __name__ == '__main__':
     with app.app_context():
         logging.info("Creating tables if not exist...")
         db.create_all()
-    app.run(debug=True,port=5001)
+    app.run(debug=True,port=5001,host='0.0.0.0')

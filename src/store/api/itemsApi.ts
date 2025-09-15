@@ -9,7 +9,7 @@ export interface Item {
 
 export const itemsApi = createApi({
   reducerPath: "itemsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5001/api' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'http://192.168.14.85:5001/api' }),
   endpoints: (build) => ({
     getItems: build.query<Item[], string>({
       query: (q) => ({
